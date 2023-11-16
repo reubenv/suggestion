@@ -2,7 +2,8 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { Editor } from '@tiptap/core';
 	import StarterKit from '@tiptap/starter-kit';
-	import { SlashMenu } from '$lib/slash/';
+	import Mention from '@tiptap/extension-mention';
+	import suggestion from './slash/suggestion';
 
 	let element: Element;
 	let editor: Editor;
@@ -10,7 +11,15 @@
 	onMount(() => {
 		editor = new Editor({
 			element: element,
-			extensions: [StarterKit, SlashMenu],
+			extensions: [
+				StarterKit,
+				Mention.configure({
+					HTMLAttributes: {
+						class: 'mention'
+					},
+					suggestion
+				})
+			],
 			content: '<p>Hello World! 🌍️ </p>',
 			onTransaction: () => {
 				// force re-render so `editor.isActive` works as expected
@@ -53,5 +62,11 @@
 	button.active {
 		background: black;
 		color: white;
+	}
+	:global(.mention) {
+		border: 1px solid #ddd;
+		border-radius: 3px;
+		padding: 0 3px;
+		border-radius: 3px;
 	}
 </style>
