@@ -37,14 +37,14 @@ const suggestion = {
 	},
 	render() {
 		let component: SvelteRenderer<MentionComponent>;
-		let popup: TippyInstance[];
+		let popup: TippyInstance;
 		return {
 			onStart(props: SuggestionProps) {
 				const { editor } = props;
 
 				component = new SvelteRenderer(MentionComponent, { props, editor });
 
-				popup = tippy('body', {
+				[popup] = tippy('body', {
 					getReferenceClientRect: props.clientRect as GetReferenceClientRect,
 					appendTo: () => document.body,
 					content: component.target,
@@ -61,7 +61,7 @@ const suggestion = {
 					return;
 				}
 
-				popup[0].setProps({
+				popup.setProps({
 					getReferenceClientRect: () => {
 						const rect = props.clientRect?.();
 						if (!rect) {
@@ -74,12 +74,12 @@ const suggestion = {
 
 			onExit() {
 				component.destroy();
-				popup[0].destroy();
+				popup.destroy();
 			},
 
 			onKeyDown(props: SuggestionKeyDownProps) {
 				if (props.event.key === 'Escape') {
-					popup[0].hide();
+					popup.hide();
 					return true;
 				}
 				return component.ref.onKeyDown(props);
