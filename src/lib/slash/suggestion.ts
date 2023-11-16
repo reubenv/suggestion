@@ -1,6 +1,7 @@
 import tippy, { type GetReferenceClientRect, type Instance as TippyInstance } from 'tippy.js';
 import MentionComponent from './Mention.svelte';
 import type { SuggestionKeyDownProps, SuggestionProps } from '@tiptap/suggestion';
+import SvelteRenderer from './SvelteRenderer';
 
 const suggestion = {
 	items: ({ query }: { query: string }) => {
@@ -35,25 +36,18 @@ const suggestion = {
 			.slice(0, 5);
 	},
 	render() {
-		let component: MentionComponent, wrapper: HTMLDivElement;
+		let component: SvelteRenderer<MentionComponent>;
 		let popup: TippyInstance[];
 		return {
 			onStart(props: SuggestionProps) {
 				const { editor } = props;
 
-				wrapper = document.createElement('div');
-
-				component = new MentionComponent({
-					target: wrapper,
-					props: { props }
-				});
-
-				editor.view.dom.parentNode?.appendChild(wrapper);
+				component = new SvelteRenderer(MentionComponent, { props, editor });
 
 				popup = tippy('body', {
 					getReferenceClientRect: props.clientRect as GetReferenceClientRect,
 					appendTo: () => document.body,
-					content: wrapper,
+					content: component.target,
 					showOnCreate: true,
 					interactive: true,
 					trigger: 'manual',
@@ -62,7 +56,7 @@ const suggestion = {
 			},
 
 			onUpdate(props: SuggestionProps) {
-				component?.$set({ props });
+				component.updateProps({ props });
 				if (!props.clientRect) {
 					return;
 				}
@@ -79,9 +73,8 @@ const suggestion = {
 			},
 
 			onExit() {
-				component?.$destroy();
+				component.destroy();
 				popup[0].destroy();
-				wrapper.remove();
 			},
 
 			onKeyDown(props: SuggestionKeyDownProps) {
@@ -89,7 +82,7 @@ const suggestion = {
 					popup[0].hide();
 					return true;
 				}
-				return component.onKeyDown(props);
+				return component.ref.onKeyDown(props);
 			}
 		};
 	}
