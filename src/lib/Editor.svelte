@@ -20,10 +20,16 @@
 					suggestion
 				})
 			],
-			content: '<p>Hello World! 🌍️ </p>',
+			content:
+				'<p>1:1 This is the beginging, 1:2 and this is the end. 1:6 But it WAS NOT. THIS is the end. 1:7 Got you again!</p>',
 			onTransaction: () => {
 				// force re-render so `editor.isActive` works as expected
 				editor = editor;
+
+				let content = getBeforeAndAfter(editor.state.selection.$anchor.pos);
+				let matches = findVerseMarkers(content.before, 'last');
+				let matches2 = findVerseMarkers(content.after, 'first');
+				console.log(matches, matches2);
 			}
 		});
 	});
@@ -33,6 +39,26 @@
 			editor.destroy();
 		}
 	});
+
+	const getBeforeAndAfter = (position: number) => {
+		let textContent = editor.getText();
+		let before = textContent.slice(0, position - 1);
+		let after = textContent.slice(position - 1);
+		return { before, after };
+	};
+	const findVerseMarkers = (text: string, position: string) => {
+		let regex = /\b\d{1,3}:\d{1,3}\b/gm;
+		let matches = text.match(regex);
+		if (matches === null) {
+			return [];
+		}
+		if (position === 'last') {
+			return matches[matches.length - 1];
+		}
+		if (position === 'first') {
+			return matches[0];
+		}
+	};
 </script>
 
 {#if editor}
