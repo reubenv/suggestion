@@ -7,6 +7,14 @@
 
 	let element: Element;
 	let editor: Editor;
+	let verseRange: string[];
+	let chapter: number = 1;
+
+	suggestion.items = ({ query }: { query: string }) => {
+		return verseRange
+			.filter((item) => item.toLowerCase().startsWith(query.toLowerCase()))
+			.slice(0, 5);
+	};
 
 	onMount(() => {
 		editor = new Editor({
@@ -21,15 +29,20 @@
 				})
 			],
 			content:
-				'<p>1:1 This is the beginging, 1:2 and this is the end. 1:6 But it WAS NOT. THIS is the end. 1:7 Got you again!</p>',
+				'<p>1:1 This is the beginning, 1:2 and this is the end. 1:6 But it WAS NOT. THIS is the end. 1:7 Got you again!</p>',
 			onTransaction: () => {
 				// force re-render so `editor.isActive` works as expected
 				editor = editor;
 
-				let content = getBeforeAndAfter(editor.state.selection.$anchor.pos);
-				let matches = findVerseMarkers(content.before, 'last');
-				let matches2 = findVerseMarkers(content.after, 'first');
-				console.log(matches, matches2);
+				// fetch the content from the editor and split it into two parts based on the cursor position
+				let content = getContentBlocks(editor.state.selection.$anchor.pos);
+
+				// find the verse markers in the content
+				let matches: string[] = findVerseMarkers(content);
+
+				// create an available verse range based on the verse markers
+				verseRange = createVerseRange(matches);
+				console.log(content);
 			}
 		});
 	});
@@ -40,24 +53,35 @@
 		}
 	});
 
-	const getBeforeAndAfter = (position: number) => {
+	const getContentBlocks = (position: number) => {
 		let textContent = editor.getText();
-		let before = textContent.slice(0, position - 1);
-		let after = textContent.slice(position - 1);
-		return { before, after };
+		return { before: textContent.slice(0, position - 1), after: textContent.slice(position - 1) };
 	};
-	const findVerseMarkers = (text: string, position: string) => {
+
+	const findVerseMarkers = (content: object): string[] => {
+		let previousVerse: string, nextVerse: string;
 		let regex = /\b\d{1,3}:\d{1,3}\b/gm;
-		let matches = text.match(regex);
-		if (matches === null) {
+		let leftVerses = content.before.match(regex);
+		let rightVerses = content.after.match(regex);
+		if (!leftVerses && !rightVerses) {
 			return [];
 		}
-		if (position === 'last') {
-			return matches[matches.length - 1];
+		previousVerse = leftVerses ? (previousVerse = leftVerses[leftVerses.length - 1]) : '';
+		nextVerse = rightVerses ? (nextVerse = rightVerses[0]) : '';
+
+		return [previousVerse, nextVerse];
+	};
+
+	const createVerseRange = (matches: string[]): string[] => {
+		let previouseVerse: string = matches[0].split(':')[1];
+		let nextVerse: string = matches[1].split(':')[1];
+		let verseRange: string[] = [];
+		if (previouseVerse && nextVerse) {
+			for (let i = parseInt(previouseVerse) + 1; i < parseInt(nextVerse); i++) {
+				verseRange.push(`${chapter}:${i}`);
+			}
 		}
-		if (position === 'first') {
-			return matches[0];
-		}
+		return verseRange;
 	};
 </script>
 
